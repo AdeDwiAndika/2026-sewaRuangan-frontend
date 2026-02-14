@@ -1,13 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { authService } from './services/api';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
-import logo from './logo.svg';
-import './App.css';
+import ReservationList from './components/ReservationList';
+import CreateReservation from './components/CreateReservation';
+import { authService } from './services/api';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode}> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!authService.isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
@@ -25,6 +25,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reservations"
+          element={
+            <ProtectedRoute>
+              <ReservationList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reservations/create"
+          element={
+            <ProtectedRoute>
+              <CreateReservation />
             </ProtectedRoute>
           }
         />

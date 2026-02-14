@@ -1,220 +1,329 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService, userService } from '../services/api';
+import { reservationService } from '../services/reservationService';
 import { LoginResponse, User } from '../types/user';
+import { Reservation } from '../types/reservation';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<LoginResponse | null>(null);
   const [userDetail, setUserDetail] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [recentReservations, setRecentReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    // Cek apakah user sudah login
-    const currentUser = authService.getCurrentUser();
-    if (!currentUser) {
-      console.log(' User not Found');
-      navigate('/login');
-      return;
-    }
+useEffect(() => {
+  const currentUser = authService.getCurrentUser();
+  if (!currentUser) {
+    navigate('/login');
+    return;
+  }
 
-    setUser(currentUser);
+  setUser(currentUser);
 
-    // Ambil detail user dari API
-    const fetchUserDetail = async () => {
-      try {
-        const detail = await userService.getCurrentUser();
-        setUserDetail(detail);
-      } catch (error) {
-        console.error('Gagal mengambil detail user:', error);
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    try {
+      const detail = await userService.getCurrentUser();
+      let reservations: Reservation[] = [];
+
+      if (detail.canViewAllReservations) {
+        reservations = await reservationService.getAll();
+      } else {
+        reservations = await reservationService.getMyReservations();
       }
-    };
+      setUserDetail(detail);
+      setRecentReservations(reservations); // tampilkan semua
+    } catch (err: any) {
+      setError(err.message || 'Gagal mengambil data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchUserDetail();
-  }, [navigate]);
+  fetchData();
+}, [navigate]);
 
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
   };
 
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      backgroundColor: '#f3f4f6'
-    },
-    navbar: {
-      backgroundColor: 'white',
-      padding: '1rem 2rem',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    title: {
-      fontSize: '1.25rem',
-      fontWeight: 'bold',
-      color: '#111827'
-    },
-    userInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem'
-    },
-    userName: {
-      fontWeight: '500'
-    },
-    badge: {
-      backgroundColor: '#3b82f6',
-      color: 'white',
-      padding: '0.25rem 0.75rem',
-      borderRadius: '9999px',
-      fontSize: '0.75rem',
-      fontWeight: '500'
-    },
-    logoutButton: {
-      padding: '0.5rem 1rem',
-      backgroundColor: '#ef4444',
-      color: 'white',
-      border: 'none',
-      borderRadius: '0.375rem',
-      cursor: 'pointer'
-    },
-    content: {
-      padding: '2rem'
-    },
-    card: {
-      backgroundColor: 'white',
-      padding: '1.5rem',
-      borderRadius: '0.5rem',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      maxWidth: '600px',
-      margin: '0 auto'
-    },
-    infoRow: {
-      display: 'flex',
-      padding: '0.75rem 0',
-      borderBottom: '1px solid #e5e7eb'
-    },
-    infoLabel: {
-      width: '150px',
-      fontWeight: '500',
-      color: '#6b7280'
-    },
-    infoValue: {
-      flex: 1,
-      color: '#111827'
-    },
-    sectionTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      marginTop: '1.5rem',
-      marginBottom: '1rem'
-    },
-    capabilities: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-      gap: '0.5rem',
-      marginTop: '1rem'
-    },
-    capability: {
-      padding: '0.5rem',
-      backgroundColor: '#f3f4f6',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem'
-    },
-    loading: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      fontSize: '1.125rem'
-    }
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      'menunggu': 'bg-yellow-100 text-yellow-800',
+      'disetujui': 'bg-green-100 text-green-800',
+      'ditolak': 'bg-red-100 text-red-800',
+      'dibatalkan': 'bg-gray-100 text-gray-800',
+      'selesai': 'bg-blue-100 text-blue-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   if (loading) {
-    return <div style={styles.loading}>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">Loading dashboard...</div>
+      </div>
+    );
   }
 
   return (
-    <div style={styles.container}>
-      <nav style={styles.navbar}>
-        <div style={styles.title}>Sewa Ruangan</div>
-        <div style={styles.userInfo}>
-          <span style={styles.userName}>{user?.name}</span>
-          <span style={styles.badge}>{user?.roleDisplayName}</span>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            Logout
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <h1 className="text-xl font-bold text-blue-600">🎓 Sewa Ruangan</h1>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md"
+                >
+                  Dashboard
+                </button>
+                <button 
+                  onClick={() => navigate('/reservations')}
+                  className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Peminjaman
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+              <span className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
+                {user?.roleDisplayName}
+              </span>
+              <button 
+                onClick={handleLogout}
+                className="px-3 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
       </nav>
 
-      <div style={styles.content}>
-        <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>Profil User</h2>
-          
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>Nama</div>
-            <div style={styles.infoValue}>{userDetail?.name || user?.name}</div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
+            {error}
           </div>
-          
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>Email</div>
-            <div style={styles.infoValue}>{userDetail?.email || user?.email}</div>
-          </div>
-          
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>No. Telepon</div>
-            <div style={styles.infoValue}>{userDetail?.phoneNumber}</div>
-          </div>
-          
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>Role</div>
-            <div style={styles.infoValue}>{userDetail?.roleDisplayName}</div>
-          </div>
-          
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>Total Reservasi</div>
-            <div style={styles.infoValue}>{userDetail?.totalReservations}</div>
-          </div>
+        )}
 
-          <h2 style={styles.sectionTitle}>Hak Akses</h2>
-          
-          <div style={styles.capabilities}>
-            {userDetail?.canApprove && (
-              <div style={styles.capability}>✅ Dapat menyetujui peminjaman</div>
-            )}
-            {userDetail?.canManageRooms && (
-              <div style={styles.capability}>✅ Dapat mengelola ruangan</div>
-            )}
-            {userDetail?.canViewAllReservations && (
-              <div style={styles.capability}>✅ Dapat melihat semua peminjaman</div>
-            )}
-            {userDetail?.canManageUsers && (
-              <div style={styles.capability}>✅ Dapat mengelola user</div>
-            )}
-            {userDetail?.canDelete && (
-              <div style={styles.capability}>✅ Dapat menghapus data</div>
-            )}
-          </div>
+        {/* Welcome Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Selamat datang, {userDetail?.name}!
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Anda login sebagai <span className="font-medium">{userDetail?.roleDisplayName}</span>
+          </p>
+        </div>
 
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>Status Akun</div>
-            <div style={styles.infoValue}>
-              {userDetail?.isActive ? '🟢 Aktif' : '🔴 Tidak Aktif'}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl">📋</span>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {userDetail?.totalReservations || 0}
+                </div>
+                <div className="text-sm text-gray-500">Total Peminjaman</div>
+              </div>
             </div>
           </div>
           
-          <div style={styles.infoRow}>
-            <div style={styles.infoLabel}>Terdaftar Sejak</div>
-            <div style={styles.infoValue}>
-              {userDetail?.createdAt ? new Date(userDetail.createdAt).toLocaleDateString('id-ID') : '-'}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl">⏳</span>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recentReservations.filter(r => r.status === 'menunggu').length}
+                </div>
+                <div className="text-sm text-gray-500">Menunggu</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl">✅</span>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recentReservations.filter(r => r.status === 'disetujui').length}
+                </div>
+                <div className="text-sm text-gray-500">Disetujui</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl">❌</span>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recentReservations.filter(r => r.status === 'ditolak').length}
+                </div>
+                <div className="text-sm text-gray-500">Ditolak</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h2>
+          <div className="flex space-x-4">
+            <button 
+              onClick={() => navigate('/reservations/create')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              + Buat Peminjaman Baru
+            </button>
+            <button 
+              onClick={() => navigate('/reservations')}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
+              Lihat Semua Peminjaman
+            </button>
+          </div>
+        </div>
+
+        {/* Recent Reservations */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Peminjaman Terbaru</h2>
+          
+          {recentReservations.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">Belum ada data peminjaman</p>
+              <button 
+                onClick={() => navigate('/reservations/create')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Buat Peminjaman Sekarang
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ruangan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jam</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentReservations.map((r) => (
+                    <tr key={r.id}>
+                      <td className="px-6 py-4 text-sm text-gray-900">{r.kodePeminjaman}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{r.ruanganNama}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {new Date(r.tanggalPeminjaman).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{r.waktuMulai} - {r.waktuSelesai}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(r.status)}`}>
+                          {r.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={() => navigate(`/reservations/${r.id}`)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Detail
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* User Info & Permissions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Info Akun */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Akun</h2>
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-sm text-gray-500">Nama</span>
+                <span className="text-sm font-medium text-gray-900">{user?.name}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-sm text-gray-500">Email</span>
+                <span className="text-sm font-medium text-gray-900">{user?.email}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-sm text-gray-500">No. Telepon</span>
+                <span className="text-sm font-medium text-gray-900">{userDetail?.phoneNumber}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-sm text-gray-500">Role</span>
+                <span className="text-sm font-medium text-gray-900">{user?.roleDisplayName}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-sm text-gray-500">Status</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {userDetail?.isActive ? '🟢 Aktif' : '🔴 Tidak Aktif'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Hak Akses */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Hak Akses</h2>
+            <div className="space-y-2">
+              {userDetail?.canApprove && (
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <span>✅</span>
+                  <span>Dapat menyetujui peminjaman</span>
+                </div>
+              )}
+              {userDetail?.canManageRooms && (
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <span>✅</span>
+                  <span>Dapat mengelola ruangan</span>
+                </div>
+              )}
+              {userDetail?.canViewAllReservations && (
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <span>✅</span>
+                  <span>Dapat melihat semua peminjaman</span>
+                </div>
+              )}
+              {userDetail?.canManageUsers && (
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <span>✅</span>
+                  <span>Dapat mengelola user</span>
+                </div>
+              )}
+              {!userDetail?.canApprove && 
+               !userDetail?.canManageRooms && 
+               !userDetail?.canViewAllReservations && 
+               !userDetail?.canManageUsers && (
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <span>👤</span>
+                  <span>Akses terbatas (hanya melihat peminjaman sendiri)</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
