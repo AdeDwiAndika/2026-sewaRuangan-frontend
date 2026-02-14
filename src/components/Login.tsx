@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { authService } from '../services/api';
 import { LoginRequest } from '../types/user';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: ''
   });
-  const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -25,10 +34,7 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await authService.login(formData);
-      console.log('Login success:', response);
-      
-      // Redirect ke dashboard atau halaman utama
+      await authService.login(formData);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login gagal');
@@ -37,141 +43,80 @@ const Login: React.FC = () => {
     }
   };
 
-  // Style CSS inline sederhana
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f3f4f6'
-    },
-    card: {
-      backgroundColor: 'white',
-      padding: '2rem',
-      borderRadius: '0.5rem',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      width: '100%',
-      maxWidth: '400px'
-    },
-    title: {
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-      textAlign: 'center' as const,
-      marginBottom: '1.5rem',
-      color: '#111827'
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '1rem'
-    },
-    inputGroup: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '0.25rem'
-    },
-    label: {
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151'
-    },
-    input: {
-      padding: '0.5rem 0.75rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      outline: 'none',
-      transition: 'border-color 0.2s'
-    },
-    button: {
-      backgroundColor: '#3b82f6',
-      color: 'white',
-      padding: '0.5rem 1rem',
-      borderRadius: '0.375rem',
-      fontWeight: '500',
-      border: 'none',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s',
-      marginTop: '0.5rem'
-    },
-    buttonDisabled: {
-      backgroundColor: '#93c5fd',
-      cursor: 'not-allowed'
-    },
-    error: {
-      backgroundColor: '#fee2e2',
-      color: '#b91c1c',
-      padding: '0.5rem',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      textAlign: 'center' as const
-    },
-    footer: {
-      marginTop: '1rem',
-      textAlign: 'center' as const,
-      fontSize: '0.875rem',
-      color: '#6b7280'
-    },
-    link: {
-      color: '#3b82f6',
-      textDecoration: 'none',
-      fontWeight: '500'
-    }
-  };
-
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Login Sewa Ruangan</h2>
-        
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {error && <div style={styles.error}>{error}</div>}
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+            🎓 Sewa Ruangan
+          </h2>
+          <p className="text-sm text-gray-600 mb-8">
+            Login ke akun Anda
+          </p>
+        </div>
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          {successMessage && (
+            <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm">
+              {successMessage}
+            </div>
+          )}
           
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Email</label>
+          {error && (
+            <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              style={styles.input}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="masukkan email"
             />
           </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Password</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password
+            </label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              style={styles.input}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="masukkan password"
             />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{
-              ...styles.button,
-              ...(loading ? styles.buttonDisabled : {})
-            }}
-          >
-            {loading ? 'Loading...' : 'Login'}
-          </button>
-        </form>
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {loading ? 'Loading...' : 'Login'}
+            </button>
+          </div>
 
-        <div style={styles.footer}>
-          Belum punya akun?{' '}
-          <Link to="/register" style={styles.link}>
-            Daftar
-          </Link>
-        </div>
+          <div className="text-center text-sm">
+            <span className="text-gray-600">Belum punya akun? </span>
+            <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+              Daftar
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   );
