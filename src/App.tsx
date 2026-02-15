@@ -1,13 +1,21 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
-import Dashboard from './components/Dashboard';
-import ReservationList from './components/ReservationList';
-import CreateReservation from './components/CreateReservation';
-import { authService } from './services/api';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Dashboard from "./components/Dashboard";
+import ReservationList from "./components/Reservation/ReservationList";
+import CreateReservation from "./components/Reservation/CreateReservation";
+import ReservationDetail from "./components/Reservation/ReservationDetail";
+import { authService } from "./services/api";
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   if (!authService.isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
@@ -27,6 +35,14 @@ function App() {
               <Dashboard />
             </ProtectedRoute>
           }
+        />
+        <Route
+        path="/reservations/:id"
+        element={
+          <ProtectedRoute>
+            <ReservationDetail />
+          </ProtectedRoute>
+        }
         />
         <Route
           path="/reservations"

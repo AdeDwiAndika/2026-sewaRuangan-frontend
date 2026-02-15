@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { reservationService, ruanganService } from '../services/reservationService';
-import { CreateReservationRequest, Ruangan } from '../types/reservation';
+import { reservationService, ruanganService } from '../../services/reservationService';
+import { CreateReservationRequest, Ruangan } from '../../types/reservation';
 
 const CreateReservation: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +49,11 @@ const CreateReservation: React.FC = () => {
       alert('Peminjaman berhasil dibuat!');
       navigate('/reservations');
     } catch (err: any) {
-      setError(err.message || 'Gagal membuat peminjaman');
+        if (err.response && err.response.data && err.response.data.message) {
+            setError(err.response.data.message);
+        } else {
+        setError(err.message || 'Gagal membuat peminjaman');
+        }
     } finally {
       setLoading(false);
     }

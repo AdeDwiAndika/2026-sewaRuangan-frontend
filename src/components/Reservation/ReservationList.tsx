@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { reservationService } from '../services/reservationService';
-import { authService } from '../services/api';
-import { Reservation } from '../types/reservation';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { reservationService } from "../../services/reservationService";
+import { authService } from "../../services/api";
+import { Reservation } from "../../types/reservation";
 
 const ReservationList: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +10,13 @@ const ReservationList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('semua');
+  
+  // State untuk modal approval
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchReservations();
@@ -27,24 +34,63 @@ const ReservationList: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (id: number, action: string, catatan?: string) => {
+  const handleApproveClick = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setShowApproveModal(true);
+  };
+
+  const handleRejectClick = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setShowRejectModal(true);
+    setRejectReason('');
+  };
+
+  const handleApprove = async () => {
+    if (!selectedReservation) return;
+    
+    setActionLoading(true);
     try {
-      if (action === 'approve') {
-        await reservationService.approve(id);
-      } else if (action === 'reject') {
-        const note = window.prompt('Catatan penolakan:');
-        if (note) await reservationService.reject(id, note);
-        else return;
-      } else if (action === 'cancel') {
-        if (window.confirm('Batalkan peminjaman ini?')) {
-          await reservationService.cancel(id);
-        } else {
-          return;
-        }
-      }
+      await reservationService.approve(selectedReservation.id);
+      setShowApproveModal(false);
       fetchReservations();
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Gagal menyetujui peminjaman');
+    } finally {
+      setActionLoading(false);
+      setSelectedReservation(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedReservation) return;
+    
+    if (!rejectReason.trim()) {
+      alert('Catatan penolakan harus diisi');
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      await reservationService.reject(selectedReservation.id, rejectReason);
+      setShowRejectModal(false);
+      fetchReservations();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menolak peminjaman');
+    } finally {
+      setActionLoading(false);
+      setSelectedReservation(null);
+      setRejectReason('');
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    if (window.confirm('Batalkan peminjaman ini?')) {
+      try {
+        await reservationService.cancel(id);
+        fetchReservations();
+      } catch (err: any) {
+        alert(err.message);
+      }
     }
   };
 
@@ -76,6 +122,7 @@ const ReservationList: React.FC = () => {
 
   const user = authService.getCurrentUser();
   const isAdmin = user?.role === 1 || user?.role === 4;
+  const canApprove = user?.role === 1 || user?.role === 3 || user?.role === 4;
 
   if (loading) {
     return (
@@ -181,40 +228,35 @@ const ReservationList: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex space-x-2">
-                        {r.status === 'menunggu' && (
+                        {/* Approval Actions - untuk yang menunggu */}
+                        {r.status === 'menunggu' && canApprove && (
                           <>
-                            {isAdmin && (
-                              <>
-                                <button 
-                                  onClick={() => handleStatusChange(r.id, 'approve')}
-                                  className="text-green-600 hover:text-green-800 font-medium"
-                                >
-                                  Setuju
-                                </button>
-                                <button 
-                                  onClick={() => handleStatusChange(r.id, 'reject')}
-                                  className="text-red-600 hover:text-red-800 font-medium"
-                                >
-                                  Tolak
-                                </button>
-                              </>
-                            )}
                             <button 
-                              onClick={() => handleStatusChange(r.id, 'cancel')}
-                              className="text-yellow-600 hover:text-yellow-800 font-medium"
+                              onClick={() => handleApproveClick(r)}
+                              className="text-green-600 hover:text-green-800 font-medium"
                             >
-                              Batal
+                              Setuju
+                            </button>
+                            <button 
+                              onClick={() => handleRejectClick(r)}
+                              className="text-red-600 hover:text-red-800 font-medium"
+                            >
+                              Tolak
                             </button>
                           </>
                         )}
-                        {r.status === 'disetujui' && (
+                        
+                        {/* Cancel - untuk pemilik atau admin */}
+                        {(r.status === 'menunggu' || r.status === 'disetujui') && (
                           <button 
-                            onClick={() => handleStatusChange(r.id, 'cancel')}
+                            onClick={() => handleCancel(r.id)}
                             className="text-yellow-600 hover:text-yellow-800 font-medium"
                           >
                             Batal
                           </button>
                         )}
+                        
+                        {/* Delete - hanya admin */}
                         {isAdmin && (
                           <button 
                             onClick={() => handleDelete(r.id)}
@@ -223,6 +265,8 @@ const ReservationList: React.FC = () => {
                             Hapus
                           </button>
                         )}
+                        
+                        {/* Detail - semua bisa lihat */}
                         <button 
                           onClick={() => navigate(`/reservations/${r.id}`)}
                           className="text-blue-600 hover:text-blue-800 font-medium"
@@ -244,6 +288,86 @@ const ReservationList: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* Modal Approve */}
+      {showApproveModal && selectedReservation && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Setujui Peminjaman</h3>
+            
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p><span className="font-medium">Kode:</span> {selectedReservation.kodePeminjaman}</p>
+              <p><span className="font-medium">Ruangan:</span> {selectedReservation.ruanganNama}</p>
+              <p><span className="font-medium">Peminjam:</span> {selectedReservation.userName}</p>
+              <p><span className="font-medium">Tanggal:</span> {new Date(selectedReservation.tanggalPeminjaman).toLocaleDateString('id-ID')}</p>
+              <p><span className="font-medium">Jam:</span> {selectedReservation.waktuMulai} - {selectedReservation.waktuSelesai}</p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowApproveModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                disabled={actionLoading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleApprove}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Memproses...' : 'Ya, Setujui'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Reject */}
+      {showRejectModal && selectedReservation && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tolak Peminjaman</h3>
+            
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p><span className="font-medium">Kode:</span> {selectedReservation.kodePeminjaman}</p>
+              <p><span className="font-medium">Ruangan:</span> {selectedReservation.ruanganNama}</p>
+              <p><span className="font-medium">Peminjam:</span> {selectedReservation.userName}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Catatan Penolakan <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={3}
+                placeholder="Contoh: Ruangan sedang dipelihara, Jadwal bentrok, dll"
+                disabled={actionLoading}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                disabled={actionLoading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={actionLoading || !rejectReason.trim()}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Memproses...' : 'Ya, Tolak'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
