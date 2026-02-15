@@ -22,7 +22,18 @@ export const reservationService = {
 
   // Create reservation
   async create(data: CreateReservationRequest): Promise<Reservation> {
-    const response = await api.post('/Reservation', data);
+    // Pastikan format data sesuai
+    const requestData = {
+      ruanganId: data.ruanganId,
+      keperluan: data.keperluan,
+      jumlahPeserta: data.jumlahPeserta,
+      tanggalPeminjaman: data.tanggalPeminjaman,
+      waktuMulai: data.waktuMulai + ':00', // Tambah detik
+      waktuSelesai: data.waktuSelesai + ':00' // Tambah detik
+    };
+    
+    console.log('Sending data:', requestData);
+    const response = await api.post('/Reservation', requestData);
     return response.data;
   },
 

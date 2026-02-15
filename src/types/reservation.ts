@@ -1,3 +1,14 @@
+export interface Ruangan {
+  id: number;
+  kodeRuangan: string;
+  namaRuangan: string;
+  gedung: string;
+  lantai: number;
+  kapasitas: number;
+  fasilitas: string;
+  status: string;
+}
+
 export interface Reservation {
   id: number;
   kodePeminjaman: string;
@@ -24,15 +35,4 @@ export interface CreateReservationRequest {
   tanggalPeminjaman: string;
   waktuMulai: string;
   waktuSelesai: string;
-}
-
-export interface Ruangan {
-  id: number;
-  kodeRuangan: string;
-  namaRuangan: string;
-  gedung: string;
-  lantai: number;
-  kapasitas: number;
-  fasilitas: string;
-  status: string;
 }
