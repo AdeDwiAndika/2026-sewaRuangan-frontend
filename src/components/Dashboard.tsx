@@ -12,6 +12,7 @@ const Dashboard: React.FC = () => {
   const [recentReservations, setRecentReservations] = useState<Reservation[]>(
     [],
   );
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -89,6 +90,12 @@ const Dashboard: React.FC = () => {
       setError(err.message || "Gagal menolak peminjaman");
     }
   };
+
+  const filteredReservations = recentReservations.filter(r =>
+    (r.keperluan?.toLowerCase() || "").includes(search.toLowerCase()) ||
+    (r.ruanganNama?.toLowerCase() || "").includes(search.toLowerCase()) ||
+    (r.status?.toLowerCase() || "").includes(search.toLowerCase())
+  );
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -191,6 +198,9 @@ const Dashboard: React.FC = () => {
             >
               Lihat Semua Peminjaman
             </button>
+            <div className="">
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari" className="border border-gray-300 px-3 py-2 rounded-md"/>
+            </div>
           </div>
         </div>
 
@@ -235,7 +245,7 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {recentReservations.map((r) => (
+                  {filteredReservations.map((r) => (
                     <tr key={r.id}>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {r.kodePeminjaman}

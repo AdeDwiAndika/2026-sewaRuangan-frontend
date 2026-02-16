@@ -1,3 +1,54 @@
+# Sewa Ruangan Frontend
+
+Aplikasi frontend untuk sistem peminjaman ruangan berbasis React.
+
+## Teknologi yang Digunakan
+
+- React
+- TypeScript
+- Tailwind CSS
+- Axios
+- React Router
+
+## Fitur Utama
+
+- Login & register user
+- Dashboard role-based (Admin, Staff, Dosen, Mahasiswa)
+- List, create, edit, hapus, approval peminjaman
+- Validasi form & notifikasi error
+- Fitur pencarian & filter
+- Manajemen user & ruangan khusus admin/staff (*Next Release)
+
+## Panduan Instalasi
+
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/AdeDwiAndika/2026-sewaRuangan-frontend
+   ```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+3. **Jalankan aplikasi**
+   ```bash
+   npm run dev
+   ```
+
+## Konfigurasi
+
+- Edit file `src/services/api.ts` untuk mengatur base URL backend jika perlu.
+
+## Struktur Folder Penting
+
+- `src/components/` : Komponen utama (Dashboard, Reservation, dsb)
+- `src/services/` : API service
+- `src/types/` : Tipe data
+
+## Catatan
+
+- Pastikan backend sudah berjalan sebelum menggunakan frontend.
+- Untuk development, gunakan browser modern (Chrome/Edge/Firefox).
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

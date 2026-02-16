@@ -10,6 +10,7 @@ const ReservationList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('semua');
+  const [search, setSearch] = useState('');
   
   // State untuk modal approval
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -33,6 +34,17 @@ const ReservationList: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const filterReservations = reservations.filter(r =>
+    (filter === 'semua' ? true : r.status === filter) &&
+    (
+      (r.keperluan?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (r.ruanganNama?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (r.status?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (r.kodePeminjaman?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (r.userName?.toLowerCase() || '').includes(search.toLowerCase())
+    )
+  );
 
   const handleApproveClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
@@ -178,21 +190,33 @@ const ReservationList: React.FC = () => {
         )}
 
         {/* Filter Buttons */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {['semua', 'menunggu', 'disetujui', 'ditolak', 'dibatalkan', 'selesai'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                filter === f
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
+        <div className="flex justify-between items-center">
+          <div className="flex flex-wrap gap-2 mb-6">
+            {['semua', 'menunggu', 'disetujui', 'ditolak', 'dibatalkan', 'selesai'].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  filter === f
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="mb-4">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Cari Peminjaman..."
+              className="border border-gray-300 px-3 py-2 rounded-md w-full"
+            />
+          </div>
         </div>
+
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -211,7 +235,7 @@ const ReservationList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReservations.map((r) => (
+                {filterReservations.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900">{r.kodePeminjaman}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{r.ruanganNama}</td>
