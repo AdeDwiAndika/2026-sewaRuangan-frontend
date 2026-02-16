@@ -11,6 +11,7 @@ import Dashboard from "./components/Dashboard";
 import ReservationList from "./components/Reservation/ReservationList";
 import CreateReservation from "./components/Reservation/CreateReservation";
 import ReservationDetail from "./components/Reservation/ReservationDetail";
+import EditReservation from "./components/Reservation/EditReservation";
 import { authService } from "./services/api";
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -41,6 +42,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ReservationDetail />
+          </ProtectedRoute>
+        }
+        />
+        <Route 
+        path="/reservations/:id/edit"
+        element={
+          <ProtectedRoute>
+            <EditReservation />
           </ProtectedRoute>
         }
         />

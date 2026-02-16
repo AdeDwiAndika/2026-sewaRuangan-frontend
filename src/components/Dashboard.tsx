@@ -117,7 +117,7 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
               <h1 className="text-xl font-bold text-blue-600">
-                🎓 Sewa Ruangan
+                Sewa Ruangan
               </h1>
               <div className="flex space-x-2">
                 <button
@@ -135,12 +135,14 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">
-                {user?.name}
-              </span>
-              <span className="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
-                {user?.roleDisplayName}
-              </span>
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-medium text-gray-700">
+                  {user?.name}
+                </span>
+                <span className="text-xs font-medium text-gray-500">
+                  {user?.roleDisplayName}
+                </span>
+              </div>
               <button
                 onClick={handleLogout}
                 className="px-3 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600"
@@ -282,6 +284,13 @@ const Dashboard: React.FC = () => {
                             </button>
                           </>
                         )}
+
+                        
+                        <button onClick={() => r.status === 'menunggu' && navigate(`/reservations/${r.id}/edit`)}
+                          className="ml-2 px-3 py-1 rounded-md text-xs bg-blue-600 text-white hover:bg-blue-700"
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
