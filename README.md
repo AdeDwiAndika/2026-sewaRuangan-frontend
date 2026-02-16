@@ -17,7 +17,7 @@ Aplikasi frontend untuk sistem peminjaman ruangan berbasis React.
 - List, create, edit, hapus, approval peminjaman
 - Validasi form & notifikasi error
 - Fitur pencarian & filter
-- Manajemen user & ruangan khusus admin/staff (*Next Release)
+- Manajemen user & ruangan khusus admin/staff (\*Next Release)
 
 ## Panduan Instalasi
 
@@ -31,8 +31,10 @@ Aplikasi frontend untuk sistem peminjaman ruangan berbasis React.
    ```
 3. **Jalankan aplikasi**
    ```bash
-   npm run dev
+   npm start
    ```
+4. **Akses aplikasi di**
+   - `http://localhost:3000/` (default CRA)
 
 ## Konfigurasi
 
