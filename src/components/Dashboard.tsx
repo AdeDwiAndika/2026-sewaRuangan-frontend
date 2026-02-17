@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
 
                         
                         <button onClick={() => r.status === 'menunggu' && navigate(`/reservations/${r.id}/edit`)}
-                          className="ml-2 px-3 py-1 rounded-md text-xs bg-blue-600 text-white hover:bg-blue-700"
+                          className={`ml-2 px-3 py-1 rounded-md text-xs ${r.status === 'menunggu' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                         >
                           Edit
                         </button>
